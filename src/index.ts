@@ -58,6 +58,21 @@ const TOOLS: Tool[] = [
             required: [],
         },
     },
+    {
+        name: "execute_terminal_command",
+        description:
+            "Execute any terminal command in JetBrains IDE",
+        inputSchema: {
+            type: "object",
+            properties: {
+                command: {
+                    type: "string",
+                    description: "The command to execute in the terminal",
+                },
+            },
+            required: ["command"],
+        },
+    },
 ]
 
 
@@ -105,6 +120,27 @@ async function fetchWithConfig(endpoint: string, errorMessage: string): Promise<
     return response.text();
 }
 
+async function postWithConfig(
+    endpoint: string,
+    data: any,
+    errorMessage: string,
+): Promise<string> {
+    const response = await fetch(`${IDE_ENDPOINT}${endpoint}`, {
+        method: 'POST',
+        headers: {
+            "User-Agent": "jetbrains-mcp-server",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        throw new Error(errorMessage);
+    }
+
+    return response.text();
+}
+
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
     try {
         switch (name) {
@@ -134,6 +170,16 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                     content: [{
                         type: "text",
                         text: text,
+                    }],
+                    isError: false,
+                };
+            }
+            case "execute_terminal_command": {
+                const text = await postWithConfig("/terminalMcp/execute_command", args, "There is no opened terminal");
+                return {
+                    content: [{
+                        type: "text",
+                        text: "OK",
                     }],
                     isError: false,
                 };
