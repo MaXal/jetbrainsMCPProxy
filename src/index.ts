@@ -12,7 +12,7 @@ import {
 
 
 const PORT = process.env.IDE_PORT || "63343";
-const IDE_ENDPOINT = `http://localhost:${PORT}/api/mcp`;
+const IDE_ENDPOINT = `http://localhost:${PORT}/api`;
 
 const server = new Server(
     {
@@ -42,6 +42,16 @@ const TOOLS: Tool[] = [
         name: "get_selected_text",
         description:
             "Get the current selected contents of a file in JetBrains IDE",
+        inputSchema: {
+            type: "object",
+            properties: {},
+            required: [],
+        },
+    },
+    {
+        name: "get_terminal_text",
+        description:
+            "Get the current contents of a terminal in JetBrains IDE",
         inputSchema: {
             type: "object",
             properties: {},
@@ -99,7 +109,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
     try {
         switch (name) {
             case "get_file_content": {
-                const text = await fetchWithConfig("/current_file", "Current file not found");
+                const text = await fetchWithConfig("/mcp/current_file", "Current file not found");
                 return {
                     content: [{
                         type: "text",
@@ -109,7 +119,17 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                 };
             }
             case "get_selected_text": {
-                const text = await fetchWithConfig("/selected_text", "There is no selected text");
+                const text = await fetchWithConfig("/mcp/selected_text", "There is no selected text");
+                return {
+                    content: [{
+                        type: "text",
+                        text: text,
+                    }],
+                    isError: false,
+                };
+            }
+            case "get_terminal_text": {
+                const text = await fetchWithConfig("/terminalMcp/current_text", "There is no opened terminal");
                 return {
                     content: [{
                         type: "text",
