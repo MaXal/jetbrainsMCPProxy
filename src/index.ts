@@ -3,11 +3,14 @@ import {Server} from "@modelcontextprotocol/sdk/server/index.js";
 import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
     CallToolRequestSchema,
-    ListToolsRequestSchema,
+    CallToolResult,
     ListResourcesRequestSchema,
-    ReadResourceRequestSchema, Tool, CallToolResult,
+    ListToolsRequestSchema,
+    ReadResourceRequestSchema,
+    Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import {zodToJsonSchema} from "zod-to-json-schema";
+
+const IDE_ENDPOINT = `http://localhost:63343/api/mcp`;
 
 const server = new Server(
     {
@@ -17,7 +20,7 @@ const server = new Server(
     {
         capabilities: {
             tools: {},
-            resources: {}, // Required for image resources
+            resources: {},
         },
     },
 );
@@ -27,6 +30,16 @@ const TOOLS: Tool[] = [
         name: "get_file_content",
         description:
             "Get the current contents of a file in JetBrains IDE",
+        inputSchema: {
+            type: "object",
+            properties: {},
+            required: [],
+        },
+    },
+    {
+        name: "get_selected_text",
+        description:
+            "Get the current selected contents of a file in JetBrains IDE",
         inputSchema: {
             type: "object",
             properties: {},
@@ -66,25 +79,39 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     throw new Error("Resource not found");
 });
 
+async function fetchWithConfig(endpoint: string, errorMessage: string): Promise<string> {
+    const response = await fetch(`${IDE_ENDPOINT}${endpoint}`, {
+        headers: {
+            "User-Agent": "jetbrains-mcp-server"
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(errorMessage);
+    }
+
+    return response.text();
+}
+
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
     try {
         switch (name) {
             case "get_file_content": {
-                const response = await fetch(
-                    `http://localhost:63343/api/mcp/current_file`,
-                    {
-                        headers: {
-                            "User-Agent": "github-mcp-server",
-                        },
-                    }
-                );
-                if (!response.ok) {
-                    throw new Error(`Current file not found`);
-                }
+                const text = await fetchWithConfig("/current_file", "Current file not found");
                 return {
                     content: [{
                         type: "text",
-                        text: await response.text(),
+                        text: text,
+                    }],
+                    isError: false,
+                };
+            }
+            case "get_selected_text": {
+                const text = await fetchWithConfig("/selected_text", "There is no selected text");
+                return {
+                    content: [{
+                        type: "text",
+                        text: text,
                     }],
                     isError: false,
                 };
@@ -93,19 +120,10 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                 throw new Error(`Unknown tool: ${name}`);
         }
     } catch (error: any) {
-        if (error instanceof Error) {
-            return {
-                content: [{
-                    type: "text",
-                    text: error.message,
-                }],
-                isError: true,
-            };
-        }
         return {
             content: [{
                 type: "text",
-                text: "Unknown error",
+                text: error instanceof Error ? error.message : "Unknown error",
             }],
             isError: true,
         };
