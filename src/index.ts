@@ -10,7 +10,9 @@ import {
     Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 
-const IDE_ENDPOINT = `http://localhost:63343/api/mcp`;
+
+const PORT = process.env.IDE_PORT || "63343";
+const IDE_ENDPOINT = `http://localhost:${PORT}/api/mcp`;
 
 const server = new Server(
     {
