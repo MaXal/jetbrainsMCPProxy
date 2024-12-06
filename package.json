@@ -17,8 +17,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "0.5.0",
-    "node-fetch": "^3.3.2",
-    "open": "^9.1.0"
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

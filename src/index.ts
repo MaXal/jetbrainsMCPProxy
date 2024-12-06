@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {Server} from "@modelcontextprotocol/sdk/server/index.js";
+import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
     CallToolRequestSchema,
     ListToolsRequestSchema,
     ListResourcesRequestSchema,
-    ReadResourceRequestSchema,
+    ReadResourceRequestSchema, Tool, CallToolResult,
 } from "@modelcontextprotocol/sdk/types.js";
+import {zodToJsonSchema} from "zod-to-json-schema";
 
 const server = new Server(
     {
@@ -21,12 +22,22 @@ const server = new Server(
     },
 );
 
+const TOOLS: Tool[] = [
+    {
+        name: "get_file_content",
+        description:
+            "Get the current contents of a file in JetBrains IDE",
+        inputSchema: {
+            type: "object",
+            properties: {},
+            required: [],
+        },
+    },
+]
+
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [
-        {
-        },
-    ],
+    tools: TOOLS,
 }));
 
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
@@ -35,7 +46,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
             {
                 uri: "jetbrains://current_file",
                 mimeType: "text/plain",
-                name: "Current File",
+                name: "Current File inside JetBrains IDE",
             },
         ],
     };
@@ -55,12 +66,55 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     throw new Error("Resource not found");
 });
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    if (request.params.name === "generate_image") {
-
+async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
+    try {
+        switch (name) {
+            case "get_file_content": {
+                const response = await fetch(
+                    `http://localhost:63343/api/mcp/current_file`,
+                    {
+                        headers: {
+                            "User-Agent": "github-mcp-server",
+                        },
+                    }
+                );
+                if (!response.ok) {
+                    throw new Error(`Current file not found`);
+                }
+                return {
+                    content: [{
+                        type: "text",
+                        text: await response.text(),
+                    }],
+                    isError: false,
+                };
+            }
+            default:
+                throw new Error(`Unknown tool: ${name}`);
+        }
+    } catch (error: any) {
+        if (error instanceof Error) {
+            return {
+                content: [{
+                    type: "text",
+                    text: error.message,
+                }],
+                isError: true,
+            };
+        }
+        return {
+            content: [{
+                type: "text",
+                text: "Unknown error",
+            }],
+            isError: true,
+        };
     }
-    throw new Error(`Unknown tool: ${request.params.name}`);
-});
+}
+
+server.setRequestHandler(CallToolRequestSchema, async (request) =>
+    handleToolCall(request.params.name, request.params.arguments ?? {})
+);
 
 async function runServer() {
     const transport = new StdioServerTransport();
