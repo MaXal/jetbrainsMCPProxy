@@ -10,7 +10,6 @@ import {
     Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 
-
 const PORT = process.env.IDE_PORT || "63343";
 const IDE_ENDPOINT = `http://localhost:${PORT}/api`;
 
@@ -29,9 +28,19 @@ const server = new Server(
 
 const TOOLS: Tool[] = [
     {
-        name: "get_file_content",
+        name: "get_current_file_text",
         description:
-            "Get the current contents of a file in JetBrains IDE",
+            "Get the current contents of the file in JetBrains IDE",
+        inputSchema: {
+            type: "object",
+            properties: {},
+            required: [],
+        },
+    },
+    {
+        name: "get_current_file_path",
+        description:
+            "Get the current file path in JetBrains IDE",
         inputSchema: {
             type: "object",
             properties: {},
@@ -41,7 +50,7 @@ const TOOLS: Tool[] = [
     {
         name: "get_selected_text",
         description:
-            "Get the current selected contents of a file in JetBrains IDE",
+            "Get the currently selected text in the JetBrains IDE",
         inputSchema: {
             type: "object",
             properties: {},
@@ -73,8 +82,7 @@ const TOOLS: Tool[] = [
             required: ["command"],
         },
     },
-]
-
+];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: TOOLS,
@@ -144,12 +152,22 @@ async function postWithConfig(
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
     try {
         switch (name) {
-            case "get_file_content": {
-                const text = await fetchWithConfig("/mcp/current_file", "Current file not found");
+            case "get_current_file_text": {
+                const text = await fetchWithConfig("/mcp/get_current_file_text", "Current file not found");
                 return {
                     content: [{
                         type: "text",
                         text: text,
+                    }],
+                    isError: false,
+                };
+            }
+            case "get_current_file_path": {
+                const path = await fetchWithConfig("/mcp/get_current_file_path", "Current file not found");
+                return {
+                    content: [{
+                        type: "text",
+                        text: path,
                     }],
                     isError: false,
                 };
@@ -175,7 +193,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                 };
             }
             case "execute_terminal_command": {
-                const text = await postWithConfig("/terminalMcp/execute_command", args, "There is no opened terminal");
+                await postWithConfig("/terminalMcp/execute_command", args, "There is no opened terminal");
                 return {
                     content: [{
                         type: "text",
