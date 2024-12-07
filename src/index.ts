@@ -10,6 +10,9 @@ import {
     Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 
+import fs from "fs";
+
+
 const PORT = process.env.IDE_PORT || "63343";
 const IDE_ENDPOINT = `http://localhost:${PORT}/api`;
 
@@ -80,6 +83,36 @@ const TOOLS: Tool[] = [
                 },
             },
             required: ["command"],
+        },
+    },
+    {
+        name: "replace_selected_text",
+        description:
+            "Replace the currently selected text in the JetBrains IDE with new text",
+        inputSchema: {
+            type: "object",
+            properties: {
+                text: {
+                    type: "string",
+                    description: "The new text to replace the selected text with",
+                },
+            },
+            required: ["text"],
+        },
+    },
+    {
+        name: "replace_current_file_text",
+        description:
+            "Replace the entire contents of the current file in JetBrains IDE with new text",
+        inputSchema: {
+            type: "object",
+            properties: {
+                text: {
+                    type: "string",
+                    description: "The new text for the entire file",
+                },
+            },
+            required: ["text"],
         },
     },
 ];
@@ -194,6 +227,28 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
             }
             case "execute_terminal_command": {
                 await postWithConfig("/terminalMcp/execute_command", args, "There is no opened terminal");
+                return {
+                    content: [{
+                        type: "text",
+                        text: "OK",
+                    }],
+                    isError: false,
+                };
+            }
+
+            case "replace_selected_text": {
+                await postWithConfig("/mcp/replace_selected_text", args, "Unable to replace selected text");
+                return {
+                    content: [{
+                        type: "text",
+                        text: "OK",
+                    }],
+                    isError: false,
+                };
+            }
+            case "replace_current_file_text": {
+                // args should contain { text: "..."}
+                await postWithConfig("/mcp/replace_current_file_text", args, "Unable to replace current file text");
                 return {
                     content: [{
                         type: "text",

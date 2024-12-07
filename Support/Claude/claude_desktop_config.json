@@ -1,0 +1,13 @@
+{
+    "mcpServers": {
+      "github": {
+        "command": "npx",
+        "args": [
+          "/Users/ignatov/src/jetbrainsMCPProxy/dist/src/index.js"
+        ],
+        "env": {
+          "IDE_PORT": "63343"
+        }
+      }
+    }
+  }
