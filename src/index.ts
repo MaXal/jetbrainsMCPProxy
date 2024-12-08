@@ -115,6 +115,25 @@ const TOOLS: Tool[] = [
             required: ["text"],
         },
     },
+    {
+        name: "create_new_file_with_text",
+        description:
+            "Create a new file inside project with specified text in JetBrains IDE",
+        inputSchema: {
+            type: "object",
+            properties: {
+                absolutePath: {
+                    type: "string",
+                    description: "The new file absolute path",
+                },
+                text: {
+                    type: "string",
+                    description: "Text for the new file",
+                },
+            },
+            required: ["text"],
+        },
+    },
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -176,7 +195,7 @@ async function postWithConfig(
     });
 
     if (!response.ok) {
-        throw new Error(errorMessage);
+        throw new Error(errorMessage + " code " + response.status + " " + response.statusText);
     }
 
     return response.text();
@@ -196,7 +215,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                 };
             }
             case "get_current_file_path": {
-                const path = await fetchWithConfig("/mcp/get_current_file_path", "Current file not found");
+                const path = await fetchWithConfig("/mcp/get_current_file_path", "Current file not found ${IDE_ENDPOINT}");
                 return {
                     content: [{
                         type: "text",
@@ -257,6 +276,19 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                     isError: false,
                 };
             }
+
+            case "create_new_file_with_text": {
+                // args should contain { text: "..."}
+                await postWithConfig("/mcp/create_new_file_with_text", args, "Unable to create new file");
+                return {
+                    content: [{
+                        type: "text",
+                        text: "OK",
+                    }],
+                    isError: false,
+                };
+            }
+
             default:
                 throw new Error(`Unknown tool: ${name}`);
         }
