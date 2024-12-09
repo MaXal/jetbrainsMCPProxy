@@ -118,7 +118,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                 };
             }
             case "get_selected_text": {
-                const text = await fetchWithConfig("/mcp/selected_text", "There is no selected text");
+                const text = await fetchWithConfig("/mcp/get_selected_text", "There is no selected text");
                 return {
                     content: [{
                         type: "text",
@@ -128,7 +128,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                 };
             }
             case "get_terminal_text": {
-                const text = await fetchWithConfig("/terminalMcp/current_text", "There is no opened terminal");
+                const text = await fetchWithConfig("/mcp/get_terminal_text", "There is no opened terminal");
                 return {
                     content: [{
                         type: "text",
@@ -138,7 +138,7 @@ async function handleToolCall(name: string, args: any): Promise<CallToolResult> 
                 };
             }
             case "execute_terminal_command": {
-                await postWithConfig("/terminalMcp/execute_command", args, "There is no opened terminal");
+                await postWithConfig("/mcp/execute_terminal_command", args, "There is no opened terminal");
                 return {
                     content: [{
                         type: "text",
