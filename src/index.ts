@@ -96,95 +96,14 @@ async function postWithConfig(
 
 async function handleToolCall(name: string, args: any): Promise<CallToolResult> {
     try {
-        switch (name) {
-            case "get_current_file_text": {
-                const text = await fetchWithConfig("/mcp/get_current_file_text", "Current file not found");
-                return {
-                    content: [{
-                        type: "text",
-                        text: text,
-                    }],
-                    isError: false,
-                };
-            }
-            case "get_current_file_path": {
-                const path = await fetchWithConfig("/mcp/get_current_file_path", "Current file not found ${IDE_ENDPOINT}");
-                return {
-                    content: [{
-                        type: "text",
-                        text: path,
-                    }],
-                    isError: false,
-                };
-            }
-            case "get_selected_text": {
-                const text = await fetchWithConfig("/mcp/get_selected_text", "There is no selected text");
-                return {
-                    content: [{
-                        type: "text",
-                        text: text,
-                    }],
-                    isError: false,
-                };
-            }
-            case "get_terminal_text": {
-                const text = await fetchWithConfig("/mcp/get_terminal_text", "There is no opened terminal");
-                return {
-                    content: [{
-                        type: "text",
-                        text: text,
-                    }],
-                    isError: false,
-                };
-            }
-            case "execute_terminal_command": {
-                await postWithConfig("/mcp/execute_terminal_command", args, "There is no opened terminal");
-                return {
-                    content: [{
-                        type: "text",
-                        text: "OK",
-                    }],
-                    isError: false,
-                };
-            }
-
-            case "replace_selected_text": {
-                await postWithConfig("/mcp/replace_selected_text", args, "Unable to replace selected text");
-                return {
-                    content: [{
-                        type: "text",
-                        text: "OK",
-                    }],
-                    isError: false,
-                };
-            }
-            case "replace_current_file_text": {
-                // args should contain { text: "..."}
-                await postWithConfig("/mcp/replace_current_file_text", args, "Unable to replace current file text");
-                return {
-                    content: [{
-                        type: "text",
-                        text: "OK",
-                    }],
-                    isError: false,
-                };
-            }
-
-            case "create_new_file_with_text": {
-                // args should contain { text: "..."}
-                await postWithConfig("/mcp/create_new_file_with_text", args, "Unable to create new file");
-                return {
-                    content: [{
-                        type: "text",
-                        text: "OK",
-                    }],
-                    isError: false,
-                };
-            }
-
-            default:
-                throw new Error(`Unknown tool: ${name}`);
-        }
+        const text = await postWithConfig(`/mcp/${name}`, args, "???");
+        return {
+            content: [{
+                type: "text",
+                text: text,
+            }],
+            isError: false,
+        };
     } catch (error: any) {
         return {
             content: [{
