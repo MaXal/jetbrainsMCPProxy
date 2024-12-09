@@ -6,12 +6,8 @@ import {
     CallToolResult,
     ListResourcesRequestSchema,
     ListToolsRequestSchema,
-    ReadResourceRequestSchema,
-    Tool,
+    ReadResourceRequestSchema, Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-
-import fs from "fs";
-
 
 const PORT = process.env.IDE_PORT || "63343";
 const IDE_ENDPOINT = `http://localhost:${PORT}/api`;
@@ -29,116 +25,13 @@ const server = new Server(
     },
 );
 
-const TOOLS: Tool[] = [
-    {
-        name: "get_current_file_text",
-        description:
-            "Get the current contents of the file in JetBrains IDE",
-        inputSchema: {
-            type: "object",
-            properties: {},
-            required: [],
-        },
-    },
-    {
-        name: "get_current_file_path",
-        description:
-            "Get the current file path in JetBrains IDE",
-        inputSchema: {
-            type: "object",
-            properties: {},
-            required: [],
-        },
-    },
-    {
-        name: "get_selected_text",
-        description:
-            "Get the currently selected text in the JetBrains IDE",
-        inputSchema: {
-            type: "object",
-            properties: {},
-            required: [],
-        },
-    },
-    {
-        name: "get_terminal_text",
-        description:
-            "Get the current contents of a terminal in JetBrains IDE",
-        inputSchema: {
-            type: "object",
-            properties: {},
-            required: [],
-        },
-    },
-    {
-        name: "execute_terminal_command",
-        description:
-            "Execute any terminal command in JetBrains IDE",
-        inputSchema: {
-            type: "object",
-            properties: {
-                command: {
-                    type: "string",
-                    description: "The command to execute in the terminal",
-                },
-            },
-            required: ["command"],
-        },
-    },
-    {
-        name: "replace_selected_text",
-        description:
-            "Replace the currently selected text in the JetBrains IDE with new text",
-        inputSchema: {
-            type: "object",
-            properties: {
-                text: {
-                    type: "string",
-                    description: "The new text to replace the selected text with",
-                },
-            },
-            required: ["text"],
-        },
-    },
-    {
-        name: "replace_current_file_text",
-        description:
-            "Replace the entire contents of the current file in JetBrains IDE with new text",
-        inputSchema: {
-            type: "object",
-            properties: {
-                text: {
-                    type: "string",
-                    description: "The new text for the entire file",
-                },
-            },
-            required: ["text"],
-        },
-    },
-    {
-        name: "create_new_file_with_text",
-        description:
-            "Create a new file inside project with specified text in JetBrains IDE",
-        inputSchema: {
-            type: "object",
-            properties: {
-                absolutePath: {
-                    type: "string",
-                    description: "The new file absolute path",
-                },
-                text: {
-                    type: "string",
-                    description: "Text for the new file",
-                },
-            },
-            required: ["text"],
-        },
-    },
-];
-
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: TOOLS,
-}));
+server.setRequestHandler(ListToolsRequestSchema, async () => (
+    fetchWithConfig("/mcp/list_tools", "Unable to list tools").then((tools) => {
+        return {
+            tools: tools ? JSON.parse(tools) as Tool[] : [],
+        };
+    }
+)));
 
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
